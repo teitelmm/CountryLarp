@@ -16,7 +16,7 @@ npm run dev          # http://localhost:5173  ->  pick a country
 Useful URLs: `/?country=POL` skips the picker, add `&fresh=1` to ignore a saved game. `/?sheet` is a dev contact-sheet of every building.
 
 ```bash
-npm test             # 188 unit tests (headless: real Rapier physics runs in Node)
+npm test             # 199 unit tests (headless: real Rapier physics runs in Node)
 npm run typecheck
 npm run build && npm run preview
 ```
@@ -45,6 +45,8 @@ Click a finished building to **inspect** it; **Demolish** (press twice to confir
 | **Time** | `Space` pause · `+` `-` speed · buttons in the top bar (1×, 2×, 3×) |
 | **Supply ports** | `P` toggles the overlay of each building's 3D supply anchors |
 
+The **theatre map** (top-left) is a hill-shaded chart of the whole country with your buildings, the ground the camera can see, and a compass rose that always shows where north points on screen. Click or drag on the chart to fly there, click the compass to face north. It also reads out the camera's latitude and longitude (inverse of the baker's projection), its altitude, and a scale bar in real kilometres.
+
 Zoom out and every building gets a constant-size map marker, so the country stays readable at strategic scale. The game **autosaves** to your browser (`localStorage`) and resumes, including buildings that were mid-construction.
 
 ## Buildings (18)
@@ -63,7 +65,7 @@ Zoom out and every building gets a constant-size map marker, so the country stay
 | | National Monument | 200 | 28 s | landmark |
 | Military | Barracks *(war)* | 180 | 18 s | |
 | | Military Academy *(war)* | 380 | 30 s | |
-| | Airfield *(war)* | 600 | 48 s | 12 km runway; needs very flat ground |
+| | Airfield *(war)* | 600 | 48 s | long runway; needs very flat ground |
 | | Naval Base *(war)* | 700 | 54 s | **coastal**: drydock and gantry |
 | | Radar Station *(war)* | 250 | 22 s | tolerates slopes |
 | | Fortress *(war)* | 350 | 34 s | tolerates steep ground |
@@ -88,11 +90,11 @@ src/
   buildings/        catalog + recipes, placement & validation, construction, demolition, selection, markers
   physics/          Rapier world
   fx/               dust particles, spring/easing
-  ui/               build bar, top bar, inspect panel, clock controls, tooltips, icon renderer
+  ui/               build bar, top bar, theatre map + compass, inspect panel, clock controls, tooltips, icon renderer, country picker
 tests/              unit tests (Vitest)
 ```
 
-**Scale.** 1 world unit = 1 km, and vertical relief is exaggerated ×6 (`CONFIG.heightExaggeration`); real relief at this scale would look flat. Buildings are deliberately oversized (a hospital is 3.6 × 2.6 km) so they stay readable.
+**Scale.** One world unit is `CONFIG.mapScale` real kilometres (default 4), so a country such as Poland is about 200 units across and crossing it takes seconds, not minutes. The baked data stays in real km; `decodeCountry(meta, rgba, scale)` divides lattice spacing and borders by the scale, and the terrain keeps its shape because heights are scaled the same way (`World` passes `heightExaggeration / scale`). Vertical relief is exaggerated ×6 relative to the horizontal (`CONFIG.heightExaggeration`); real relief would look flat. Buildings are authored in world units and deliberately oversized (a hospital footprint is 3.6 × 2.6 units, shown as about 14 × 10 km) so they stay readable; each stands for a whole complex. Ground slope is judged across at least `CONFIG.slopeBaseline` (0.5 units), so it does not depend on the data resolution. Change `mapScale` to make the map bigger or smaller; saves from another scale are ignored (the save key is versioned).
 
 **Real terrain.** `npm run bake -- POL DEU …` downloads [Natural Earth](https://www.naturalearthdata.com/) borders and [AWS Terrain Tiles](https://registry.opendata.aws/terrain-tiles/) (Terrarium) elevation, reprojects onto a local metric grid, rasterises the border mask, removes isolated elevation spikes, and writes one PNG + JSON per country. Six are committed (Poland, Germany, France, United Kingdom, Italy, Ukraine); baked areas match reality within ~0.5% (the UK is ~4% off from the single-parallel projection). Edit `scripts/countries.config.mjs` to add a bounding box (to drop overseas territories) or flag colours. Ukraine uses Natural Earth's point-of-view file so its map follows internationally recognised borders.
 
@@ -113,6 +115,7 @@ npm run e2e:camera         # pan / rotate / zoom-to-cursor / edge scroll with re
 npm run e2e:placement      # menu, ghost, validation reasons, coastal port, funds
 npm run e2e:construction   # captures each construction stage (e2e-out/*.png); optional building id argument
 npm run e2e:features       # select / inspect / demolish / autosave + resume / markers / ports overlay
+npm run e2e:hud            # theatre map: coordinates, compass, click-to-fly, scale bar (screenshots: e2e-out/hud-*.png)
 npm run smoke:prod         # against `npm run preview` (the production bundle)
 ```
 
@@ -122,7 +125,7 @@ Headless Chromium uses software WebGL, which renders only a few frames per secon
 
 - **Water** is elevation ≤ 0 outside the border (inside it, sub-sea-level land such as polders is lifted to land). Lakes appear as flat land, because the elevation data gives lake surfaces a positive height.
 - **Land cover** (forest / farmland patches) is procedural noise, not real data.
-- Terrain at ~0.5–1.3 km per sample is coarse next to building scale; bicubic sampling and detail shading hide most of it.
+- Terrain is sampled every ~0.5–1.3 real km (0.13–0.33 world units at the default scale), fine next to a building; each building now covers a lot of real land, so hills and valleys inside one footprint are averaged by the slope baseline.
 - Huge countries (Russia, the USA) need a bounding box in the config to bake sensibly.
 - Performance was verified headless and with software rendering only; real-GPU frame rates are untested.
 

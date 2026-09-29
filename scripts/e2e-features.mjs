@@ -54,7 +54,7 @@ const stat = () => page.evaluate(() => {
 await load(base + '&fresh=1');
 const site = await page.evaluate(() => {
   const g = window.__game, m = g.world.data.meta;
-  return { x: (19.4 - m.lon0) * 111.195 * Math.cos(m.lat0 * Math.PI / 180), z: -(52.0 - m.lat0) * 111.195 };
+  return { x: (19.4 - m.lon0) * (111.195 / window.__game.world.data.scale) * Math.cos(m.lat0 * Math.PI / 180), z: -(52.0 - m.lat0) * (111.195 / window.__game.world.data.scale) };
 });
 await fly(site.x, site.z);
 await frames(3);
@@ -85,7 +85,7 @@ const [cx, cy] = await screenOf(b1.x, b1.y, b1.z);
 await page.mouse.click(cx, cy);
 await frames(3);
 s = await stat();
-check('clicking a building selects it and opens the panel', s.selected === 'hospital' && !!s.panel && /Hospital/.test(s.panel), s.panel);
+check('clicking a building selects it and opens the panel', s.selected === 'hospital' && !!s.panel && /hospital/i.test(s.panel), s.panel);
 check('the panel shows it is operational', /Operational/.test(s.panel ?? ''), s.panel);
 check('the panel lists its supply connections', /supply connections/i.test(s.panel ?? '') && /Road/.test(s.panel ?? ''));
 await page.screenshot({ path: 'e2e-out/features-1-selected.png' });
@@ -109,7 +109,7 @@ check('an unfinished building can be selected and shows progress', s.selected ==
 
 // ---- Autosave and resume ---------------------------------------------------------------------------
 await frames(20); // > 1.5 s of real time so the autosave debounce fires
-const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('countrylarp.save.v1.POL') ?? 'null'));
+const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('countrylarp.save.v2.POL') ?? 'null'));
 check('the game autosaved', !!saved && saved.buildings.length === 2, saved ? `${saved.buildings.length} buildings, funds ${saved.funds}` : 'no save');
 check('the save records finished and unfinished buildings', !!saved && saved.buildings[0].complete === true && saved.buildings[1].complete === false && saved.buildings[1].elapsed > 1);
 const fundsBefore = (await stat()).funds;

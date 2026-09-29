@@ -1,6 +1,11 @@
-// Central tunables. World units are kilometres (1 unit = 1 km); see src/world/CountryData.ts.
+// Central tunables. One world unit is `mapScale` real kilometres; see src/world/CountryData.ts.
 export const CONFIG = {
-  /** World-Y units per km of real elevation. Real relief at 1 km per unit would look flat. */
+  /**
+   * Real kilometres per world unit. Buildings are authored in world units, so a larger value shrinks the
+   * country around them: the map is smaller and travel is quicker, while terrain shape is unchanged.
+   */
+  mapScale: 4,
+  /** Vertical exaggeration relative to the horizontal scale. Real relief would look flat. */
   heightExaggeration: 6,
   /** Placement grid snap in world units. */
   gridSnap: 0.5,
@@ -10,6 +15,8 @@ export const CONFIG = {
   edgeSinkFraction: 0.07,
   /** World-Y the terrain sinks to at the very edge of the map. */
   edgeSeaDepth: -0.35,
+  /** Ground slope is judged across at least this many world units (about a fifth of a small building). */
+  slopeBaseline: 0.5,
   /** Width (world units) of the smooth blend around a graded building pad. */
   gradeMargin: 1.6,
   /** Terrain chunking (in height-grid cells per chunk side). */

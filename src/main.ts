@@ -1,4 +1,11 @@
 import * as THREE from 'three';
+import '@fontsource/big-shoulders-display/latin-700';
+import '@fontsource/big-shoulders-display/latin-800';
+import '@fontsource/barlow/latin-400';
+import '@fontsource/barlow/latin-500';
+import '@fontsource/barlow/latin-600';
+import '@fontsource/ibm-plex-mono/latin-400';
+import '@fontsource/ibm-plex-mono/latin-500';
 import './ui/styles.css';
 import { Game } from './Game';
 import { RTSCamera } from './camera/RTSCamera';

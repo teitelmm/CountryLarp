@@ -23,7 +23,7 @@ await page.click('.bb-card[data-building="hospital"]');
 const site = await page.evaluate(() => {
   const g = window.__game, def = g.placement.active;
   const m = g.world.data.meta;
-  const cx = (19.4 - m.lon0) * 111.195 * Math.cos(m.lat0 * Math.PI / 180), cz = -(52.0 - m.lat0) * 111.195;
+  const cx = (19.4 - m.lon0) * (111.195 / window.__game.world.data.scale) * Math.cos(m.lat0 * Math.PI / 180), cz = -(52.0 - m.lat0) * (111.195 / window.__game.world.data.scale);
   for (let r = 0; r < 60; r += 3) for (let a = 0; a < 12; a++) {
     const x = Math.round((cx + Math.cos(a / 12 * 6.283) * r) / 0.5) * 0.5, z = Math.round((cz + Math.sin(a / 12 * 6.283) * r) / 0.5) * 0.5;
     if (g.placement.check(def, x, z, 0).ok) {

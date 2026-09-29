@@ -11,6 +11,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PNG } from 'pngjs';
 import { COUNTRIES, DEFAULT_COLORS, STARTER_SET } from './countries.config.mjs';
+import { outlineOf } from './lib/outline.mjs';
 import {
   H_MAX, H_MIN, H_STEP, TILE, applyLandRule, bilinear, decodeTerrarium, filterPolygons, lonLatToPixel,
   despike, packDataImage, pickZoom, polygonsBBox, projectLocal, rasterizeMask, toPolygons, unprojectLocal,
@@ -185,15 +186,18 @@ async function bake(iso) {
 
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isMain) {
-  const requested = process.argv.slice(2).map((s) => s.toUpperCase());
+  const args = process.argv.slice(2).map((s) => s.toUpperCase());
+  // `--index` rebuilds only the country list from the JSON already on disk (no downloads).
+  const indexOnly = args.includes('--INDEX');
+  const requested = args.filter((s) => !s.startsWith('--'));
   const isos = requested.length ? requested : STARTER_SET;
-  for (const iso of isos) await bake(iso);
+  if (!indexOnly) for (const iso of isos) await bake(iso);
   // Manifest so the game can list available countries without a directory listing.
   const files = (await fs.readdir(OUT)).filter((f) => f.endsWith('.json') && f !== 'index.json');
   const index = [];
   for (const f of files) {
     const m = JSON.parse(await fs.readFile(path.join(OUT, f), 'utf8'));
-    index.push({ iso: m.iso, name: m.name, colors: m.colors, landKm2: m.stats.landKm2 });
+    index.push({ iso: m.iso, name: m.name, colors: m.colors, landKm2: m.stats.landKm2, outline: outlineOf(m.borders) });
   }
   index.sort((a, b) => a.name.localeCompare(b.name));
   await fs.writeFile(path.join(OUT, 'index.json'), JSON.stringify(index));

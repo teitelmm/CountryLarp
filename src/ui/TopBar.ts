@@ -13,8 +13,8 @@ export class TopBar {
     const [top, bottom] = meta.colors.flag ?? [meta.colors.primary, meta.colors.secondary];
     this.el.innerHTML = `
       <div class="tb-country">
-        <span class="flag" style="--c1:${top};--c2:${bottom}"><i></i><i></i></span>
-        <span class="tb-name"></span>
+        <span class="tb-plaque"><span class="flag" style="--c1:${top};--c2:${bottom}"><i></i><i></i></span></span>
+        <span class="tb-titles"><span class="tb-name"></span><span class="tb-sub"></span></span>
       </div>
       <div class="tb-center"></div>
       <div class="tb-right">
@@ -22,6 +22,7 @@ export class TopBar {
         <div class="tb-funds" title="Treasury"><span class="coin">◆</span><span class="tb-funds-value"></span></div>
       </div>`;
     (this.el.querySelector('.tb-name') as HTMLElement).textContent = meta.name;
+    (this.el.querySelector('.tb-sub') as HTMLElement).textContent = `${meta.iso} · ${meta.stats.landKm2.toLocaleString('en-US')} km²`;
     this.funds = this.el.querySelector('.tb-funds-value')!;
     (this.el.querySelector('.tb-new') as HTMLButtonElement).addEventListener('click', () => onNewGame?.());
     this.center = this.el.querySelector('.tb-center')!;

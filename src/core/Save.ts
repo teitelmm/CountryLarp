@@ -18,7 +18,7 @@ export interface SaveData {
   buildings: SavedBuilding[];
 }
 
-export const saveKey = (iso: string) => `countrylarp.save.v1.${iso.toUpperCase()}`;
+export const saveKey = (iso: string) => `countrylarp.save.v2.${iso.toUpperCase()}`;
 
 /** Snapshot the parts of the game worth keeping. */
 export function encode(iso: string, funds: number, buildings: Building[]): SaveData {

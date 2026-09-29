@@ -40,8 +40,8 @@ const shot = async (name, settleFrames = 3) => { await frames(settleFrames); awa
 const site = await page.evaluate(async (id) => {
   const g = window.__game, m = g.world.data.meta, T = g.THREE;
   const def = (await import('/src/buildings/catalog.ts')).getDef(id);
-  const toX = (lon) => (lon - m.lon0) * 111.195 * Math.cos(m.lat0 * Math.PI / 180);
-  const toZ = (lat) => -(lat - m.lat0) * 111.195;
+  const toX = (lon) => (lon - m.lon0) * (111.195 / window.__game.world.data.scale) * Math.cos(m.lat0 * Math.PI / 180);
+  const toZ = (lat) => -(lat - m.lat0) * (111.195 / window.__game.world.data.scale);
   let found = null;
   if (def.placement.needsCoast) {
     for (let lat = 54.2; lat <= 54.9 && !found; lat += 0.02) for (let lon = 16.0; lon <= 19.0 && !found; lon += 0.02) {

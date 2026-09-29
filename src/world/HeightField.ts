@@ -193,9 +193,13 @@ export class HeightField {
     return (Math.acos(Math.min(1, Math.max(-1, n.y))) * 180) / Math.PI;
   }
 
-  /** Slope of the original terrain (what a building site is judged on, whatever was built nearby). */
-  slopeDegNatural(x: number, z: number): number {
-    const e = this.cell * 0.5;
+  /**
+   * Slope of the original terrain (what a building site is judged on, whatever was built nearby).
+   * `baseline` is the smallest length (world units) the slope is measured across.
+   */
+  slopeDegNatural(x: number, z: number, baseline = 0): number {
+    // Measured across at least `baseline` world units, so the reading does not depend on the data resolution.
+    const e = Math.max(this.cell * 0.5, baseline / 2);
     const dx = (this.sampleNatural(x + e, z) - this.sampleNatural(x - e, z)) / (2 * e);
     const dz = (this.sampleNatural(x, z + e) - this.sampleNatural(x, z - e)) / (2 * e);
     return (Math.atan(Math.hypot(dx, dz)) * 180) / Math.PI;

@@ -1,5 +1,6 @@
 import type { Building } from '../buildings/Building';
 import type { PortKind } from '../buildings/types';
+import { CONFIG } from '../core/config';
 
 const fmt = (n: number) => n.toLocaleString('en-US');
 export const REFUND_FRACTION = 0.5;
@@ -68,7 +69,7 @@ export class InspectPanel {
       c.textContent = `${k.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase())} ${v}`;
       chips.appendChild(c);
     }
-    (this.el.querySelector('.in-meta') as HTMLElement).textContent = `${def.footprint.w} × ${def.footprint.d} km · ${def.pieces.length} pieces`;
+    (this.el.querySelector('.in-meta') as HTMLElement).textContent = `${Math.round(def.footprint.w * CONFIG.mapScale)} × ${Math.round(def.footprint.d * CONFIG.mapScale)} km · ${def.pieces.length} pieces`;
     const ports = this.el.querySelector('.in-ports') as HTMLElement;
     ports.innerHTML = '';
     const kinds = [...new Set(def.ports.map((p) => p.kind))];

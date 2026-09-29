@@ -26,8 +26,8 @@ const check = (name, ok, detail = '') => { results.push(ok); console.log(`${ok ?
 /** Fly the camera to (lon, lat) and return the world position. */
 const lookAt = (lon, lat, dist = 26, pitchDeg = 50, yawDeg = 0) => page.evaluate(([lon, lat, dist, pitch, yaw]) => {
   const g = window.__game, m = g.world.data.meta, T = g.THREE;
-  const x = (lon - m.lon0) * 111.195 * Math.cos(m.lat0 * Math.PI / 180);
-  const z = -(lat - m.lat0) * 111.195;
+  const x = (lon - m.lon0) * (111.195 / window.__game.world.data.scale) * Math.cos(m.lat0 * Math.PI / 180);
+  const z = -(lat - m.lat0) * (111.195 / window.__game.world.data.scale);
   g.rig.setPose({ focus: new T.Vector3(x, g.world.hf.surface(x, z), z), distance: dist, pitch: pitch * Math.PI / 180, yaw: yaw * Math.PI / 180 });
   return { x, z };
 }, [lon, lat, dist, pitchDeg, yawDeg]);
@@ -155,8 +155,8 @@ const found = await page.evaluate(async () => {
   const g = window.__game, m = g.world.data.meta;
   const { getDef } = await import('/src/buildings/catalog.ts');
   const port = getDef('port');
-  const toX = (lon) => (lon - m.lon0) * 111.195 * Math.cos(m.lat0 * Math.PI / 180);
-  const toZ = (lat) => -(lat - m.lat0) * 111.195;
+  const toX = (lon) => (lon - m.lon0) * (111.195 / window.__game.world.data.scale) * Math.cos(m.lat0 * Math.PI / 180);
+  const toZ = (lat) => -(lat - m.lat0) * (111.195 / window.__game.world.data.scale);
   for (let lat = 54.2; lat <= 54.9; lat += 0.02) {
     for (let lon = 16.0; lon <= 19.0; lon += 0.02) {
       const x = Math.round(toX(lon) / 0.5) * 0.5, z = Math.round(toZ(lat) / 0.5) * 0.5;
@@ -194,7 +194,7 @@ await page.click('.bb-tab[data-category="medical"]');
 await lookAt(19.4, 52.0); // the camera was left at the port
 await frames(3);
 await clickCard('hospital');
-await hoverWorld(site.x - 14, site.z - 9);
+await hoverWorld(site.x + 12, site.z + 4); // clear of the theatre map card in the top-left
 st = await state();
 check('an unaffordable building is flagged', st.ok === false && /Not enough funds/.test(st.tip ?? ''), st.tip?.replace(/\n/g, ' | '));
 const poor = await page.$eval('.bb-card[data-building="hospital"]', (e) => e.classList.contains('poor'));

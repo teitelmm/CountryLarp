@@ -120,7 +120,7 @@ export function validatePlacement(env: PlacementEnv, def: BuildingDef, x: number
   let slopeDeg = 0;
   for (const s of samples) {
     if (s.h <= CONFIG.seaLevel) continue;
-    slopeDeg = Math.max(slopeDeg, hf.slopeDegNatural(s.x, s.z));
+    slopeDeg = Math.max(slopeDeg, hf.slopeDegNatural(s.x, s.z, CONFIG.slopeBaseline));
   }
   if (slopeDeg > rules.maxSlopeDeg) {
     reasons.push({ code: 'too_steep', message: `Too steep: ${slopeDeg.toFixed(0)}° (max ${rules.maxSlopeDeg}°)` });

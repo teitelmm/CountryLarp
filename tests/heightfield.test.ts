@@ -165,6 +165,18 @@ describe('natural terrain (validation judges the land, not earlier earthworks)',
     expect(hf.slopeDeg(9.8, 0)).toBeGreaterThan(hf.slopeDegNatural(9.8, 0) + 5);
   });
 
+  it('measures slope across at least the requested baseline, so fine data resolution does not read as steep', () => {
+    const hf = makeMap();
+    // A one-cell bump is steep at cell scale but gentle when measured across 4 cells.
+    (hf as unknown as { h0: Float32Array }).h0[20 * 41 + 20] += 2;
+    hf.h[20 * 41 + 20] += 2;
+    const fine = hf.slopeDegNatural(0, 0);
+    const coarse = hf.slopeDegNatural(0, 0, 4);
+    expect(coarse).toBeLessThan(fine);
+    // A pure ramp reads the same at any baseline.
+    expect(hf.slopeDegNatural(8, 4, 4)).toBeCloseTo(hf.slopeDegNatural(8, 4), 1);
+  });
+
   it('meanHeight can be taken over the natural terrain', () => {
     const hf = makeMap();
     const before = hf.meanHeight(5, 0, 2, 2, 0, 5, true);

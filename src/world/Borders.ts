@@ -1,8 +1,7 @@
 import * as THREE from 'three';
-import type { CountryMeta } from './CountryData';
 import type { HeightField } from './HeightField';
 
-const MAX_SEGMENT = 1.0; // km: resample border edges so the curtain follows the terrain
+const MAX_SEGMENT = 0.25; // world units: resample border edges so the curtain follows the terrain
 
 /**
  * The country border as a translucent "curtain" hugging the terrain: a bright line on the ground
@@ -12,13 +11,14 @@ export class Borders {
   readonly mesh: THREE.Mesh;
   private readonly material: THREE.ShaderMaterial;
 
-  constructor(meta: CountryMeta, hf: HeightField) {
+  /** `borders`: polygons -> rings -> [x, z] in world units; `primary`: the country's CSS colour. */
+  constructor(borders: number[][][][], primary: string, hf: HeightField) {
     const positions: number[] = [];
     const top: number[] = [];
     const along: number[] = [];
     const indices: number[] = [];
 
-    for (const polygon of meta.borders) {
+    for (const polygon of borders) {
       // Only outer rings (index 0) and holes alike are drawn: all are border.
       for (const ring of polygon) {
         if (ring.length < 3) continue;
@@ -54,7 +54,7 @@ export class Borders {
     geo.setAttribute('aAlong', new THREE.Float32BufferAttribute(along, 1));
     geo.setIndex(indices);
 
-    const color = new THREE.Color(meta.colors.primary).lerp(new THREE.Color(0xffffff), 0.35);
+    const color = new THREE.Color(primary).lerp(new THREE.Color(0xffffff), 0.35);
     this.material = new THREE.ShaderMaterial({
       transparent: true,
       depthWrite: false,
@@ -95,7 +95,7 @@ export class Borders {
         void main() {
           float fade = pow(1.0 - vTop, 1.6);
           float base = 1.0 - smoothstep(0.0, 0.10, vTop);
-          float pulse = 0.85 + 0.15 * sin(vAlong * 0.5 - uTime * 2.0);
+          float pulse = 0.85 + 0.15 * sin(vAlong * 2.0 - uTime * 2.0);
           vec3 col = mix(uColor, vec3(1.0), base * 0.6);
           float alpha = (fade * 0.7 + base * 0.6) * pulse;
           gl_FragColor = vec4(col, alpha);

@@ -1,11 +1,15 @@
 import { CATALOG } from '../buildings/catalog';
 import type { Placement } from '../buildings/Placement';
 import { CATEGORIES, type BuildingDef, type Category } from '../buildings/types';
+import { CONFIG } from '../core/config';
 import type { Input } from '../core/Input';
 import type { Treasury } from '../core/Treasury';
+import { categoryGlyph } from './glyphs';
 import type { IconRenderer } from './IconRenderer';
 
 const fmt = (n: number) => n.toLocaleString('en-US');
+/** Footprints are authored in world units; show real kilometres so they agree with the map's scale bar. */
+const realKm = (units: number) => Math.round(units * CONFIG.mapScale);
 const EFFECT_LABEL: Record<string, string> = {
   health: 'Health', morale: 'Morale', industry: 'Industry', militaryIndustry: 'Arms production', jobs: 'Jobs', power: 'Power',
   pollution: 'Pollution', fuel: 'Fuel', housing: 'Housing', food: 'Food', research: 'Research', stability: 'Stability',
@@ -41,7 +45,8 @@ export class BuildMenu {
       const tab = document.createElement('button');
       tab.className = 'bb-tab';
       tab.dataset.category = c.id;
-      tab.textContent = c.label;
+      tab.innerHTML = `${categoryGlyph(c.id)}<span></span>`;
+      (tab.lastElementChild as HTMLElement).textContent = c.label;
       tab.title = c.blurb;
       tab.addEventListener('click', () => this.setCategory(c.id));
       this.tabs.appendChild(tab);
@@ -139,7 +144,7 @@ export class BuildMenu {
       <div class="bi-stats">
         <span>Cost <b>◆ ${fmt(def.cost)}</b></span>
         <span>Build time <b>${def.buildTime}s</b></span>
-        <span>Size <b>${def.footprint.w} × ${def.footprint.d} km</b></span>
+        <span>Size <b>${realKm(def.footprint.w)} × ${realKm(def.footprint.d)} km</b></span>
       </div>
       <div class="bi-chips">${effects}</div>
       <div class="bi-req">Needs: ${reqs.join(' · ')}</div>`;

@@ -67,6 +67,27 @@ describe('baked starter countries', () => {
     }
   });
 
+  it('mapScale shrinks lattice, extent and borders together and leaves heights and the baked meta alone', () => {
+    const meta = readMeta('pol');
+    const png = readPng('pol');
+    const full = decodeCountry(meta, png.data);
+    const small = decodeCountry(meta, png.data, 4);
+    expect(small.scale).toBe(4);
+    expect(small.cellKm).toBeCloseTo(full.cellKm / 4, 12);
+    expect(small.sizeX).toBeCloseTo(full.sizeX / 4, 9);
+    expect(small.sizeZ).toBeCloseTo(full.sizeZ / 4, 9);
+    expect(small.heights[12345]).toBe(full.heights[12345]);
+    const [x, z] = meta.borders[0][0][7];
+    expect(small.borders[0][0][7][0]).toBeCloseTo(x / 4, 12);
+    expect(small.borders[0][0][7][1]).toBeCloseTo(z / 4, 12);
+    expect(small.meta.borders[0][0][7]).toEqual([x, z]);
+    // The shrink applies to the whole country: the border still fits inside the smaller lattice.
+    for (const poly of small.borders) for (const ring of poly) for (const [bx, bz] of ring) {
+      expect(Math.abs(bx)).toBeLessThanOrEqual(small.sizeX / 2 + small.cellKm);
+      expect(Math.abs(bz)).toBeLessThanOrEqual(small.sizeZ / 2 + small.cellKm);
+    }
+  });
+
   it('known areas are within a few percent of reality', () => {
     // Real areas (km^2): metropolitan/mainland extents as baked. GBR is looser (single-parallel projection).
     const expected: Record<string, [number, number]> = {

@@ -18,6 +18,6 @@ export function makeMap(cols = 41, rows = 41) {
     }
   }
   const meta = { iso: 'TST', name: 'Test', cols, rows, cellKm: 1 } as CountryMeta;
-  const data: CountryData = { meta, cols, rows, cellKm: 1, heights, mask, sizeX: cols - 1, sizeZ: rows - 1 };
+  const data: CountryData = { meta, cols, rows, cellKm: 1, scale: 1, borders: [], heights, mask, sizeX: cols - 1, sizeZ: rows - 1 };
   return new HeightField(data, 1);
 }

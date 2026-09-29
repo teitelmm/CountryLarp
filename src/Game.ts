@@ -17,6 +17,7 @@ import { loadRapier, PhysicsWorld } from './physics/PhysicsWorld';
 import { BuildMenu } from './ui/BuildMenu';
 import { ClockControls } from './ui/ClockControls';
 import { IconRenderer } from './ui/IconRenderer';
+import { MapCard } from './ui/MapCard';
 import { InspectPanel, REFUND_FRACTION } from './ui/InspectPanel';
 import { Toast } from './ui/Toast';
 import { TopBar } from './ui/TopBar';
@@ -49,6 +50,7 @@ export class Game {
   private readonly inspect: InspectPanel;
   readonly markers: StrategicMarkers;
   readonly ports: PortsOverlay;
+  private readonly mapCard: MapCard;
   private readonly drawingSize = new THREE.Vector2();
   private dirty = false;
   private saveTimer = 0;
@@ -78,7 +80,7 @@ export class Game {
   ) {
     this.world = new World(data);
     this.world.scene.add(this.dust.points);
-    this.territory = new Territory(data.meta.borders);
+    this.territory = new Territory(data.borders);
     this.buildings = new BuildingManager(this.world, data.meta.colors, {
       physics,
       dust: this.dust,
@@ -99,6 +101,7 @@ export class Game {
     this.selection.onChange((b) => this.inspect.show(b));
     this.markers = new StrategicMarkers(this.world.scene, this.buildings, this.icons);
     this.ports = new PortsOverlay(this.world.scene, this.buildings);
+    this.mapCard = new MapCard(data, this.world.hf, rig, this.buildings);
 
     this.disposers.push(
       input.onKey((e) => {
@@ -183,6 +186,7 @@ export class Game {
     for (let i = 0; i < steps; i++) this.simulate(FIXED_DT);
     this.placement.update();
     this.rig.update(realDt, this.input);
+    this.mapCard.update();
     this.world.update(time, this.rig, this.renderer);
     this.renderer.getDrawingBufferSize(this.drawingSize);
     this.dust.setPixelScale(this.drawingSize.y, this.rig.camera.fov);
@@ -211,6 +215,7 @@ export class Game {
     this.inspect.dispose();
     this.markers.dispose();
     this.ports.dispose();
+    this.mapCard.dispose();
     this.placement.dispose();
     this.buildings.dispose();
     this.menu.dispose();

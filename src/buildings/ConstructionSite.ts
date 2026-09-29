@@ -16,7 +16,7 @@ export const SIZING_TIME = 0.9;
 /** Seconds of topping-out: squash-and-settle, scaffold strip-down, crane fold-away. */
 export const FINISH_TIME = 2.6;
 /** Beyond this camera distance a site skips rigid bodies and tweens its pieces (same look, no cost). */
-export const PHYSICS_RANGE = 380;
+export const PHYSICS_RANGE = 110;
 const TWEEN_FLIGHT = 1.1;
 const START_DELAY = 0.3;
 

@@ -1,8 +1,10 @@
+import { CONFIG } from '../core/config';
+
 // Loads a baked country (see scripts/bake-country.mjs): a height/mask data image plus JSON metadata.
 //
-// World conventions: 1 unit = 1 km, +x east, +z south (north is -z), +y up. The height grid has
-// `cols x rows` nodes `cellKm` apart, centred on the origin (node (i, j) is at
-// x = (i - (cols-1)/2) * cellKm, z = (j - (rows-1)/2) * cellKm).
+// World conventions: 1 unit = `scale` real km (CONFIG.mapScale), +x east, +z south (north is -z), +y up.
+// The height grid has `cols x rows` nodes `cellKm` (world units) apart, centred on the origin (node (i, j)
+// is at x = (i - (cols-1)/2) * cellKm, z = (j - (rows-1)/2) * cellKm). The baked JSON stays in real km.
 
 export interface CountryColors {
   primary: string;
@@ -34,24 +36,34 @@ export interface CountryIndexEntry {
   name: string;
   colors: CountryColors;
   landKm2: number;
+  /** Silhouette for the picker: outer rings of the biggest polygons, [x, z] in real km. */
+  outline?: number[][][];
 }
 
 export interface CountryData {
   meta: CountryMeta;
   cols: number;
   rows: number;
+  /** Node spacing in world units (the baked `meta.cellKm` divided by `scale`). */
   cellKm: number;
-  /** Elevation in metres, row-major (j * cols + i). Water is <= 0. */
+  /** Real kilometres per world unit. */
+  scale: number;
+  /** Border polygons in world units (`meta.borders` divided by `scale`). */
+  borders: number[][][][];
+  /** Elevation in real metres, row-major (j * cols + i). Water is <= 0. */
   heights: Float32Array;
   /** 1 where the node is inside the country's border. */
   mask: Uint8Array;
-  /** World extent of the node lattice (km). */
+  /** Extent of the node lattice in world units. */
   sizeX: number;
   sizeZ: number;
 }
 
-/** Pure decode of the RGBA data image: R,G = 16-bit height (hStep metres above hMin), B = mask. */
-export function decodeCountry(meta: CountryMeta, rgba: ArrayLike<number>): CountryData {
+/**
+ * Pure decode of the RGBA data image: R,G = 16-bit height (hStep metres above hMin), B = mask.
+ * `scale` is real km per world unit: it shrinks the lattice spacing and the borders, not the heights.
+ */
+export function decodeCountry(meta: CountryMeta, rgba: ArrayLike<number>, scale = 1): CountryData {
   const { cols, rows, hMin, hStep } = meta;
   const n = cols * rows;
   if (rgba.length < n * 4) throw new Error(`Data image too small for ${meta.iso}: ${rgba.length} < ${n * 4}`);
@@ -61,15 +73,18 @@ export function decodeCountry(meta: CountryMeta, rgba: ArrayLike<number>): Count
     heights[k] = hMin + ((rgba[k * 4] << 8) | rgba[k * 4 + 1]) * hStep;
     mask[k] = rgba[k * 4 + 2] > 127 ? 1 : 0;
   }
+  const cell = meta.cellKm / scale;
   return {
     meta,
     cols,
     rows,
-    cellKm: meta.cellKm,
+    cellKm: cell,
+    scale,
+    borders: scale === 1 ? meta.borders : meta.borders.map((poly) => poly.map((ring) => ring.map(([x, z]) => [x / scale, z / scale]))),
     heights,
     mask,
-    sizeX: (cols - 1) * meta.cellKm,
-    sizeZ: (rows - 1) * meta.cellKm,
+    sizeX: (cols - 1) * cell,
+    sizeZ: (rows - 1) * cell,
   };
 }
 
@@ -113,5 +128,5 @@ export async function loadCountry(iso: string): Promise<CountryData> {
   if (canvas.width !== meta.cols || canvas.height !== meta.rows) {
     throw new Error(`${iso}: image is ${canvas.width}x${canvas.height}, metadata says ${meta.cols}x${meta.rows}`);
   }
-  return decodeCountry(meta, ctx.getImageData(0, 0, canvas.width, canvas.height).data);
+  return decodeCountry(meta, ctx.getImageData(0, 0, canvas.width, canvas.height).data, CONFIG.mapScale);
 }
