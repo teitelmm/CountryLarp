@@ -184,3 +184,33 @@ export function applyLandRule(heights, mask, landMinM = 0.5) {
     if (mask[n] && heights[n] < landMinM) heights[n] = landMinM;
   }
 }
+
+/**
+ * Remove isolated single-pixel spikes from raw elevation data (the source tiles contain a few, e.g.
+ * a 450 m "mountain" in the Baltic). Only cells whose neighbourhood median is near sea level are
+ * touched, so genuine peaks and cliffs are never flattened.
+ * Returns the number of pixels replaced.
+ */
+export function despike(data, w, h, { lowMedianM = 30, spikeM = 50, tolM = 15, minAgree = 5 } = {}) {
+  let fixed = 0;
+  const nb = new Float32Array(8);
+  const src = data.slice(); // read from an untouched copy so fixes do not cascade
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const v = src[y * w + x];
+      if (v < spikeM) continue; // cheap early-out: a spike must stand at least spikeM above sea level
+      let k = 0;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (dx || dy) nb[k++] = src[(y + dy) * w + x + dx];
+      const sorted = Array.from(nb).sort((a, b) => a - b);
+      const median = (sorted[3] + sorted[4]) / 2;
+      if (median >= lowMedianM || v - median <= spikeM) continue;
+      let agree = 0;
+      for (let i = 0; i < 8; i++) if (Math.abs(nb[i] - median) <= tolM) agree++;
+      if (agree >= minAgree) {
+        data[y * w + x] = median;
+        fixed++;
+      }
+    }
+  }
+  return fixed;
+}

@@ -1,25 +1,60 @@
 import * as THREE from 'three';
+import './ui/styles.css';
+import { RTSCamera } from './camera/RTSCamera';
+import { showCountryPicker, showLoading } from './ui/CountryPicker';
+import { loadCountry, loadCountryIndex } from './world/CountryData';
+import { HORIZON_COLOR } from './world/Sky';
+import { World } from './world/World';
 
 const app = document.getElementById('app')!;
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
+renderer.setClearColor(HORIZON_COLOR);
+renderer.toneMapping = THREE.NeutralToneMapping;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFShadowMap;
 app.appendChild(renderer.domElement);
 
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87a7c4);
-const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 5000);
-camera.position.set(6, 5, 8);
-camera.lookAt(0, 0, 0);
-const cube = new THREE.Mesh(new THREE.BoxGeometry(2, 1, 1.5), new THREE.MeshStandardMaterial({ color: 0xb04a3a }));
-scene.add(cube, new THREE.HemisphereLight(0xffffff, 0x445566, 1.4));
+const rig = new RTSCamera(innerWidth / innerHeight);
+let world: World | null = null;
 
 addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight);
-  camera.aspect = innerWidth / innerHeight;
-  camera.updateProjectionMatrix();
+  rig.resize(innerWidth / innerHeight);
 });
-renderer.setAnimationLoop(() => {
-  cube.rotation.y += 0.01;
-  renderer.render(scene, camera);
+
+const timer = new THREE.Timer();
+renderer.setAnimationLoop((now) => {
+  timer.update(now);
+  if (!world) return;
+  world.update(timer.getElapsed(), rig, renderer);
+  renderer.render(world.scene, rig.camera);
 });
+
+async function startCountry(iso: string) {
+  const done = showLoading(`Loading ${iso}…`);
+  try {
+    const data = await loadCountry(iso);
+    world?.dispose();
+    world = new World(data);
+    rig.maxDistance = world.extent * 1.15;
+    rig.setPose({ focus: new THREE.Vector3(0, 0, 0), yaw: 0, pitch: THREE.MathUtils.degToRad(55), distance: world.extent * 0.85 });
+    (window as unknown as { __game: unknown }).__game = { renderer, rig, get world() { return world; }, THREE };
+  } finally {
+    done();
+  }
+}
+
+async function boot() {
+  const requested = new URLSearchParams(location.search).get('country');
+  if (requested) return startCountry(requested.toUpperCase());
+  const countries = await loadCountryIndex();
+  const close = showCountryPicker(countries, (iso) => {
+    close();
+    void startCountry(iso);
+  });
+}
+
+void boot();

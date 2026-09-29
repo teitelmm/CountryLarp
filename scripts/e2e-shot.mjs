@@ -13,7 +13,7 @@ page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') 
 page.on('pageerror', (e) => errors.push(`[pageerror] ${e.message}`));
 await page.goto(url, { waitUntil: 'load' });
 await page.waitForTimeout(Number(waitMs));
-if (evalJs) console.log('eval →', JSON.stringify(await page.evaluate(evalJs)));
+if (evalJs) { console.log('eval →', JSON.stringify(await page.evaluate(evalJs))); await page.waitForTimeout(1500); }
 await page.screenshot({ path: out });
 console.log(errors.length ? errors.join('\n') : 'no console errors');
 await browser.close();

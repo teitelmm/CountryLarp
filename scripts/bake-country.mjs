@@ -13,7 +13,7 @@ import { PNG } from 'pngjs';
 import { COUNTRIES, DEFAULT_COLORS, STARTER_SET } from './countries.config.mjs';
 import {
   H_MAX, H_MIN, H_STEP, TILE, applyLandRule, bilinear, decodeTerrarium, filterPolygons, lonLatToPixel,
-  packDataImage, pickZoom, polygonsBBox, projectLocal, rasterizeMask, toPolygons, unprojectLocal,
+  despike, packDataImage, pickZoom, polygonsBBox, projectLocal, rasterizeMask, toPolygons, unprojectLocal,
 } from './lib/bake-lib.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -128,6 +128,9 @@ async function bake(iso) {
       }
     }
   });
+
+  const spikes = despike(mosaic, mw, mh);
+  if (spikes) console.log(`${iso}: removed ${spikes} isolated elevation spike pixel(s)`);
 
   // Resample onto the grid.
   const heights = new Float32Array(cols * rows);

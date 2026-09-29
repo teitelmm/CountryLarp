@@ -7,6 +7,8 @@
 export interface CountryColors {
   primary: string;
   secondary: string;
+  /** Optional [top, bottom] stripes for the picker swatch when they differ from primary/secondary. */
+  flag?: [string, string];
 }
 
 export interface CountryMeta {

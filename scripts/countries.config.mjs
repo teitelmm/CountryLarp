@@ -1,12 +1,12 @@
 // Per-country baking config. Keyed by Natural Earth ADM0_A3 (NOT ISO_A3, which is "-99" for France/Norway).
 //   keepBox  [minLon, minLat, maxLon, maxLat] - polygons whose centre is outside are dropped
 //            (overseas territories would otherwise blow up the map extent).
-//   colors   flag colours used to tint roofs / banners.
+//   colors   primary/secondary tint roofs and banners; optional flag: [top, bottom] sets the picker swatch.
 //   source   border dataset (key of BORDER_SOURCES in bake-country.mjs); default 'ne50m'.
 //            Natural Earth's default file follows a de-facto view of disputed areas, so a country
 //            can opt into a point-of-view file that follows internationally recognised borders.
 export const COUNTRIES = {
-  POL: { keepBox: null, colors: { primary: '#dc143c', secondary: '#f2f2f2' } },
+  POL: { keepBox: null, colors: { primary: '#dc143c', secondary: '#f2f2f2', flag: ['#f2f2f2', '#dc143c'] } },
   DEU: { keepBox: null, colors: { primary: '#3b3b3b', secondary: '#dd0000' } },
   FRA: { keepBox: [-5.5, 41.2, 9.8, 51.3], colors: { primary: '#0055a4', secondary: '#ef4135' } }, // mainland + Corsica
   GBR: { keepBox: [-8.7, 49.8, 2.0, 60.9], colors: { primary: '#012169', secondary: '#c8102e' } },

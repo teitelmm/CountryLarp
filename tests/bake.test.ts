@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  H_MAX, H_MIN, H_STEP, applyLandRule, bilinear, decodeHeight, decodeTerrarium, encodeHeight, filterPolygons,
+  H_MAX, H_MIN, H_STEP, applyLandRule, bilinear, decodeHeight, despike, decodeTerrarium, encodeHeight, filterPolygons,
   lonLatToPixel, packDataImage, pickZoom, projectLocal, rasterizeMask, unpackDataImage, unprojectLocal,
 } from '../scripts/lib/bake-lib.mjs';
 
@@ -108,5 +108,42 @@ describe('bilinear + data image', () => {
     expect(h[0]).toBeCloseTo(0.5);
     expect(h[1]).toBe(-3);
     expect(h[2]).toBe(5);
+  });
+});
+
+describe('despike', () => {
+  const grid = (w: number, h: number, fill: number) => new Float32Array(w * h).fill(fill);
+
+  it('removes an isolated spike over flat, near-sea-level ground', () => {
+    const d = grid(9, 9, 2);
+    d[4 * 9 + 4] = 450;
+    expect(despike(d, 9, 9)).toBe(1);
+    expect(d[4 * 9 + 4]).toBe(2);
+  });
+
+  it('removes a 2x2 blob of spikes (a bilinear-spread single pixel would look like this)', () => {
+    const d = grid(9, 9, 1);
+    for (const [x, y] of [[4, 4], [5, 4], [4, 5], [5, 5]]) d[y * 9 + x] = 300;
+    expect(despike(d, 9, 9)).toBe(4);
+    expect(Math.max(...d)).toBe(1);
+  });
+
+  it('never flattens real mountains: a steep peak on high ground is kept', () => {
+    const d = grid(9, 9, 1500);
+    d[4 * 9 + 4] = 2400;
+    expect(despike(d, 9, 9)).toBe(0);
+    expect(d[4 * 9 + 4]).toBe(2400);
+  });
+
+  it('keeps a coastal cliff (high neighbours agree with the tall cell)', () => {
+    const d = grid(9, 9, 0);
+    for (let y = 0; y < 9; y++) for (let x = 4; x < 9; x++) d[y * 9 + x] = 120; // plateau meeting the sea
+    expect(despike(d, 9, 9)).toBe(0);
+  });
+
+  it('leaves low ground untouched', () => {
+    const d = grid(9, 9, 5);
+    d[4 * 9 + 4] = 40;
+    expect(despike(d, 9, 9)).toBe(0);
   });
 });
