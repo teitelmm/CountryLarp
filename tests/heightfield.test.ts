@@ -1,26 +1,7 @@
 import { Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
-import type { CountryData, CountryMeta } from '../src/world/CountryData';
-import { HeightField, catmullRom } from '../src/world/HeightField';
-
-/**
- * Synthetic 41x41 map, 1 km cells, exaggeration 1 (so world Y = km).
- * Elevation rises east-to-west... concretely: metres = 100 * (i - 10) for i in 0..40, so nodes with
- * i <= 10 are at or below sea level (water), and the country mask covers i in [15, 35], j in [5, 35].
- */
-function makeMap(cols = 41, rows = 41) {
-  const heights = new Float32Array(cols * rows);
-  const mask = new Uint8Array(cols * rows);
-  for (let j = 0; j < rows; j++) {
-    for (let i = 0; i < cols; i++) {
-      heights[j * cols + i] = 100 * (i - 10);
-      mask[j * cols + i] = i >= 15 && i <= 35 && j >= 5 && j <= 35 ? 1 : 0;
-    }
-  }
-  const meta = { iso: 'TST', name: 'Test', cols, rows, cellKm: 1 } as CountryMeta;
-  const data: CountryData = { meta, cols, rows, cellKm: 1, heights, mask, sizeX: cols - 1, sizeZ: rows - 1 };
-  return new HeightField(data, 1);
-}
+import { catmullRom } from '../src/world/HeightField';
+import { makeMap } from './helpers';
 
 describe('HeightField sampling', () => {
   const hf = makeMap();

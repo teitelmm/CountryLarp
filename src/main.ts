@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import './ui/styles.css';
 import { RTSCamera } from './camera/RTSCamera';
+import { Input } from './core/Input';
 import { showCountryPicker, showLoading } from './ui/CountryPicker';
 import { loadCountry, loadCountryIndex } from './world/CountryData';
 import { HORIZON_COLOR } from './world/Sky';
@@ -17,6 +18,8 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
 app.appendChild(renderer.domElement);
 
+renderer.domElement.tabIndex = 0;
+const input = new Input(renderer.domElement);
 const rig = new RTSCamera(innerWidth / innerHeight);
 let world: World | null = null;
 
@@ -26,9 +29,12 @@ addEventListener('resize', () => {
 });
 
 const timer = new THREE.Timer();
+let frames = 0;
 renderer.setAnimationLoop((now) => {
   timer.update(now);
   if (!world) return;
+  rig.update(timer.getDelta(), input);
+  frames++;
   world.update(timer.getElapsed(), rig, renderer);
   renderer.render(world.scene, rig.camera);
 });
@@ -39,9 +45,10 @@ async function startCountry(iso: string) {
     const data = await loadCountry(iso);
     world?.dispose();
     world = new World(data);
-    rig.maxDistance = world.extent * 1.15;
+    rig.attach(world.hf);
     rig.setPose({ focus: new THREE.Vector3(0, 0, 0), yaw: 0, pitch: THREE.MathUtils.degToRad(55), distance: world.extent * 0.85 });
-    (window as unknown as { __game: unknown }).__game = { renderer, rig, get world() { return world; }, THREE };
+    rig.setHome();
+    (window as unknown as { __game: unknown }).__game = { renderer, rig, input, get world() { return world; }, get frames() { return frames; }, THREE };
   } finally {
     done();
   }
