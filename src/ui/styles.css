@@ -164,3 +164,13 @@ html, body {
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 .toast.bad { border-color: rgba(229, 96, 77, 0.7); color: #ffb0a4; }
 .toast.good { border-color: rgba(88, 194, 125, 0.6); color: #a6e8bd; }
+
+/* ---- game clock --------------------------------------------------------------------------- */
+.clock { display: flex; align-items: center; gap: 4px; }
+.clock-btn {
+  min-width: 34px; height: 28px; padding: 0 8px; border-radius: 7px; border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.05); color: var(--muted); font: 700 11px/1 system-ui; cursor: pointer; letter-spacing: -0.1em;
+}
+.clock-btn:hover { color: var(--text); background: rgba(255, 255, 255, 0.1); }
+.clock-btn.active { color: #101826; background: var(--accent); border-color: var(--accent); }
+.clock-time { min-width: 44px; margin-left: 8px; text-align: center; color: var(--muted); font-variant-numeric: tabular-nums; font-weight: 600; }

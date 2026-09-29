@@ -7,7 +7,7 @@ const browser = await chromium.launch({
   executablePath: process.env.CHROMIUM_PATH || '/opt/pw-browsers/chromium',
   args: ['--use-angle=swiftshader', '--use-gl=angle', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--no-sandbox'],
 });
-const W = 800, H = 450;
+const W = 1100, H = 650; // large enough that the build bar (bottom ~200px) leaves the drag path over the canvas
 const page = await browser.newPage({ viewport: { width: W, height: H } });
 const errors = [];
 page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') errors.push(`[${m.type()}] ${m.text()}`); });

@@ -75,6 +75,7 @@ await page.screenshot({ path: 'e2e-out/placement-2-ghost-valid.png' });
 const fundsBefore = st.funds;
 await page.mouse.click(...(await toScreen(site.x, site.z)));
 await frames(4);
+await page.evaluate(() => window.__game.advance(1.2)); // let the ground finish grading (it animates in game time)
 st = await state();
 check('left click places the building', st.count === 1 && st.active === null, `count ${st.count}`);
 check('placing spends the building cost', st.funds === fundsBefore - 250, `${fundsBefore} -> ${st.funds}`);

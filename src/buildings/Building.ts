@@ -1,13 +1,17 @@
 import * as THREE from 'three';
 import type { Obb } from '../core/obb';
+import type { ConstructionSite } from './ConstructionSite';
 import type { BuildingDef } from './types';
 
-export type BuildingState = 'complete';
+export type BuildingState = 'sizing' | 'constructing' | 'finishing' | 'complete';
 
-/** A placed building. (Construction states arrive with the construction sequencer.) */
+/** A placed building. While under construction its `site` drives the animation and physics. */
 export class Building {
   readonly root = new THREE.Group();
   state: BuildingState = 'complete';
+  /** Construction progress in [0, 1]; 1 once complete. */
+  progress = 1;
+  site: ConstructionSite | null = null;
 
   constructor(
     readonly id: number,
