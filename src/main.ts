@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import './ui/styles.css';
+import { Game } from './Game';
 import { RTSCamera } from './camera/RTSCamera';
 import { Input } from './core/Input';
 import { showCountryPicker, showLoading } from './ui/CountryPicker';
 import { loadCountry, loadCountryIndex } from './world/CountryData';
 import { HORIZON_COLOR } from './world/Sky';
-import { World } from './world/World';
 
 const app = document.getElementById('app')!;
 
@@ -21,7 +21,6 @@ app.appendChild(renderer.domElement);
 renderer.domElement.tabIndex = 0;
 const input = new Input(renderer.domElement);
 const rig = new RTSCamera(innerWidth / innerHeight);
-let world: World | null = null;
 
 addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight);
@@ -30,25 +29,36 @@ addEventListener('resize', () => {
 
 const timer = new THREE.Timer();
 let frames = 0;
+let game: Game | null = null;
+
 renderer.setAnimationLoop((now) => {
   timer.update(now);
-  if (!world) return;
-  rig.update(timer.getDelta(), input);
+  if (!game) return;
+  game.update(timer.getDelta(), timer.getElapsed());
+  game.render();
   frames++;
-  world.update(timer.getElapsed(), rig, renderer);
-  renderer.render(world.scene, rig.camera);
 });
 
 async function startCountry(iso: string) {
   const done = showLoading(`Loading ${iso}…`);
   try {
     const data = await loadCountry(iso);
-    world?.dispose();
-    world = new World(data);
-    rig.attach(world.hf);
-    rig.setPose({ focus: new THREE.Vector3(0, 0, 0), yaw: 0, pitch: THREE.MathUtils.degToRad(55), distance: world.extent * 0.85 });
+    game?.dispose();
+    game = new Game(data, renderer, rig, input);
+    rig.attach(game.world.hf);
+    rig.setPose({ focus: new THREE.Vector3(0, 0, 0), yaw: 0, pitch: THREE.MathUtils.degToRad(55), distance: game.world.extent * 0.85 });
     rig.setHome();
-    (window as unknown as { __game: unknown }).__game = { renderer, rig, input, get world() { return world; }, get frames() { return frames; }, THREE };
+    // Debug / test hook (used by the Playwright scripts).
+    const g = game;
+    (window as unknown as { __game: unknown }).__game = {
+      game: g, renderer, rig, input, THREE,
+      get world() { return g.world; },
+      get placement() { return g.placement; },
+      get buildings() { return g.buildings; },
+      get treasury() { return g.treasury; },
+      get territory() { return g.territory; },
+      get frames() { return frames; },
+    };
   } finally {
     done();
   }

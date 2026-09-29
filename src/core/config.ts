@@ -20,6 +20,8 @@ export const CONFIG = {
     minPitchDeg: 18,
     maxPitchDeg: 88,
   },
+  /** Starting treasury (a stub until the economy exists: placement just spends from it). */
+  startingFunds: 6000,
   /** Maximum number of physics bodies simulated at once (see physics budget). */
   maxPhysicsBodies: 400,
 } as const;

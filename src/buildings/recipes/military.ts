@@ -80,7 +80,7 @@ export const airfield = defineBuilding({
   cost: 600,
   buildTime: 48,
   wartime: true,
-  placement: { maxSlopeDeg: 2.5 },
+  placement: { maxSlopeDeg: 3 },
   ports: [air(-4.5, 0.3, 0.5), air(4.5, 0.3, 0.5), ground(-5.9, -1.0, [-1, 0]), rail(5.9, -1.0, [1, 0])],
   effects: { airCapacity: 8, supplyHub: 1 },
   recipe: (r, w, d) => {

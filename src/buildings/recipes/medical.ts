@@ -18,7 +18,7 @@ export const hospital = defineBuilding({
   d: 2.6,
   cost: 250,
   buildTime: 24,
-  placement: { maxSlopeDeg: 7 },
+  placement: { maxSlopeDeg: 8 },
   ports: [ground(0, 1.25, [0, 1]), air(0.55, 1.75, -0.35)],
   effects: { health: 6, morale: 2 },
   recipe: (r, w, d) => {

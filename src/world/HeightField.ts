@@ -1,5 +1,6 @@
 import { Vector3 } from 'three';
 import { CONFIG } from '../core/config';
+import { rotateOffset, unrotateOffset } from '../core/obb';
 import type { CountryData } from './CountryData';
 
 export interface GradeSpec {
@@ -274,11 +275,8 @@ export class HeightField {
     const padTo: number[] = [];
     for (let j = j0; j <= j1; j++) {
       for (let i = i0; i <= i1; i++) {
-        const dx = this.nodeX(i) - cx;
-        const dz = this.nodeZ(j) - cz;
-        // Into the footprint's local frame (inverse rotation).
-        const lx = cos * dx + sin * dz;
-        const lz = -sin * dx + cos * dz;
+        // Into the footprint's local frame (same convention as core/obb: rot = rotation.y).
+        const [lx, lz] = unrotateOffset(this.nodeX(i) - cx, this.nodeZ(j) - cz, rot);
         const qx = Math.max(Math.abs(lx) - halfW, 0);
         const qz = Math.max(Math.abs(lz) - halfD, 0);
         const dist = Math.hypot(qx, qz);
@@ -315,14 +313,13 @@ export class HeightField {
 
   /** Mean of the smooth surface over a footprint (used as the pad's target height). */
   meanHeight(cx: number, cz: number, halfW: number, halfD: number, rot: number, samples = 5): number {
-    const cos = Math.cos(rot);
-    const sin = Math.sin(rot);
     let sum = 0;
     for (let a = 0; a < samples; a++) {
       for (let b = 0; b < samples; b++) {
         const lx = ((a + 0.5) / samples - 0.5) * 2 * halfW;
         const lz = ((b + 0.5) / samples - 0.5) * 2 * halfD;
-        sum += this.sample(cx + cos * lx - sin * lz, cz + sin * lx + cos * lz);
+        const [dx, dz] = rotateOffset(lx, lz, rot);
+        sum += this.sample(cx + dx, cz + dz);
       }
     }
     return sum / (samples * samples);

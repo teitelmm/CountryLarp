@@ -10,7 +10,7 @@ export const civilianFactory = defineBuilding({
   d: 3,
   cost: 300,
   buildTime: 28,
-  placement: { maxSlopeDeg: 5 },
+  placement: { maxSlopeDeg: 6 },
   ports: [ground(0.2, 1.45, [0, 1]), rail(-1.95, -0.3, [-1, 0]), power(1.6, 1.6, -1.1)],
   effects: { industry: 5, jobs: 3 },
   recipe: (r, w, d) => {
@@ -44,7 +44,7 @@ export const warFactory = defineBuilding({
   cost: 450,
   buildTime: 36,
   wartime: true,
-  placement: { maxSlopeDeg: 5 },
+  placement: { maxSlopeDeg: 6 },
   ports: [ground(1.6, 1.75, [0, 1]), rail(-2.45, -0.5, [-1, 0]), power(2.0, 1.9, -1.3)],
   effects: { militaryIndustry: 4, jobs: 4 },
   recipe: (r, w, d) => {
@@ -89,7 +89,7 @@ export const powerPlant = defineBuilding({
   d: 4.2,
   cost: 400,
   buildTime: 36,
-  placement: { maxSlopeDeg: 5 },
+  placement: { maxSlopeDeg: 6 },
   ports: [power(2.2, 2.0, 0), ground(-0.5, 2.05, [0, 1]), pipeline(-2.45, 0.6, [-1, 0])],
   effects: { power: 12, pollution: 3 },
   recipe: (r, w, d) => {
@@ -127,7 +127,7 @@ export const oilRefinery = defineBuilding({
   d: 4,
   cost: 500,
   buildTime: 42,
-  placement: { maxSlopeDeg: 5 },
+  placement: { maxSlopeDeg: 6 },
   ports: [pipeline(-2.45, 0, [-1, 0]), ground(0.5, 1.95, [0, 1]), rail(2.45, 0.5, [1, 0])],
   effects: { fuel: 8, pollution: 4 },
   recipe: (r, w, d) => {
