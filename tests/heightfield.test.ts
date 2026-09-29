@@ -142,3 +142,34 @@ describe('HeightField grading', () => {
     expect(hf.meanHeight(6, 0, 2, 1.5, 0.7)).toBeCloseTo(0.1 * (6 + 10), 5);
   });
 });
+
+describe('natural terrain (validation judges the land, not earlier earthworks)', () => {
+  it('sampleNatural and slopeDegNatural match the live surface until something is graded', () => {
+    const hf = makeMap();
+    for (const [x, z] of [[2, 1], [-4, 3], [9.5, -6]]) {
+      expect(hf.sampleNatural(x, z)).toBeCloseTo(hf.sample(x, z), 9);
+      expect(hf.slopeDegNatural(x, z)).toBeCloseTo(hf.slopeDeg(x, z), 6);
+    }
+    expect(hf.slopeDegNatural(0, 0)).toBeCloseTo((Math.atan(0.1) * 180) / Math.PI, 3);
+  });
+
+  it('is untouched by grading, while the live surface changes', () => {
+    const hf = makeMap();
+    const natural = hf.sampleNatural(5, 0);
+    const slope = hf.slopeDegNatural(6.4, 0.3);
+    hf.applyGrade(hf.planGrade({ cx: 5, cz: 0, halfW: 2, halfD: 2, rot: 0, targetY: 3, margin: 1.6 }), 1);
+    expect(hf.sample(5, 0)).toBeCloseTo(3, 5);
+    expect(hf.sampleNatural(5, 0)).toBeCloseTo(natural, 9);
+    expect(hf.slopeDegNatural(6.4, 0.3)).toBeCloseTo(slope, 9);
+    // The flat zone reaches x = 9; the blend ramp (x = 9..10.6) is far steeper than the land it was carved from.
+    expect(hf.slopeDeg(9.8, 0)).toBeGreaterThan(hf.slopeDegNatural(9.8, 0) + 5);
+  });
+
+  it('meanHeight can be taken over the natural terrain', () => {
+    const hf = makeMap();
+    const before = hf.meanHeight(5, 0, 2, 2, 0, 5, true);
+    hf.applyGrade(hf.planGrade({ cx: 5, cz: 0, halfW: 2, halfD: 2, rot: 0, targetY: 3, margin: 1.6 }), 1);
+    expect(hf.meanHeight(5, 0, 2, 2, 0, 5, true)).toBeCloseTo(before, 9);
+    expect(hf.meanHeight(5, 0, 2, 2, 0, 5, false)).toBeCloseTo(3, 4);
+  });
+});

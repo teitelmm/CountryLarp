@@ -119,6 +119,12 @@ export class Dust {
     }
   }
 
+  /** Discard every live particle. */
+  clear() {
+    this.age.fill(Infinity);
+    this.live = 0;
+  }
+
   update(dt: number) {
     const sizes = this.sizeAttr.array as Float32Array;
     const alphas = this.alphaAttr.array as Float32Array;

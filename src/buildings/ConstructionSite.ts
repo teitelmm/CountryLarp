@@ -80,6 +80,9 @@ export class ConstructionSite {
 
   private t = 0;
   private elapsed = 0;
+  /** Total game seconds since the site was created (saved so construction can resume). */
+  totalTime = 0;
+  private forceTween = false;
   private readonly T: number;
   private readonly deadline: number;
   private readonly interval: number;
@@ -133,7 +136,7 @@ export class ConstructionSite {
     root.add(this.piecesGroup);
 
     // --- terrain pad (applied progressively during sizing) ---------------------------------------
-    this.plan = ctx.hf.planGrade({ cx: building.x, cz: building.z, halfW: w / 2, halfD: d / 2, rot: building.rot, targetY: building.padY, margin: 1.6 });
+    this.plan = ctx.hf.planGrade({ cx: building.x, cz: building.z, halfW: w / 2, halfD: d / 2, rot: building.rot, targetY: building.padY, margin: CONFIG.gradeMargin });
 
     // --- blueprint: volume + edges + footprint outline, scaled up with a spring -------------------
     const teamColor = new THREE.Color(ctx.mats.team.color);
@@ -197,6 +200,7 @@ export class ConstructionSite {
   /** Advance the timeline and apply steering forces (before the physics step). */
   preStep(dt: number) {
     if (this.phase === 'done' || this.aborted) return;
+    this.totalTime += dt;
     switch (this.phase) {
       case 'sizing': {
         this.t += dt;
@@ -275,7 +279,7 @@ export class ConstructionSite {
     const tilt = new THREE.Quaternion().setFromEuler(new THREE.Euler((Math.random() - 0.5) * 0.9, (Math.random() - 0.5) * 1.4, (Math.random() - 0.5) * 0.9));
     const spawnQuat = p.targetQuat.clone().multiply(tilt);
 
-    const usePhysics = ctx.physics.dynamicCount < (ctx.maxBodies ?? CONFIG.maxPhysicsBodies) && ctx.cameraPosition().distanceTo(building.root.position) < PHYSICS_RANGE;
+    const usePhysics = !this.forceTween && ctx.physics.dynamicCount < (ctx.maxBodies ?? CONFIG.maxPhysicsBodies) && ctx.cameraPosition().distanceTo(building.root.position) < PHYSICS_RANGE;
     p.mode = usePhysics ? 'physics' : 'tween';
     p.phase = 'flying';
     p.age = 0;
@@ -506,6 +510,20 @@ export class ConstructionSite {
     }
     this.cleanup();
     this.phase = 'done';
+  }
+
+  /**
+   * Skip ahead `seconds` of construction without rigid bodies (pieces are tweened): used to resume a saved
+   * game. Dust from the skipped time is discarded by the caller.
+   */
+  fastForward(seconds: number, dt = 1 / 60) {
+    this.forceTween = true;
+    const steps = Math.round(seconds / dt);
+    for (let i = 0; i < steps && this.phase !== 'done'; i++) {
+      this.preStep(dt);
+      this.postStep(dt);
+    }
+    this.forceTween = false;
   }
 
   /** Per-frame visuals that depend on the camera: billboard the progress bar at a readable size. */

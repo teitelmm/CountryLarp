@@ -23,6 +23,12 @@ export class Treasury {
     return true;
   }
 
+  /** Set the balance outright (restoring a saved game). */
+  set(value: number) {
+    this.balance = value;
+    this.emit();
+  }
+
   add(amount: number) {
     this.balance += amount;
     this.emit();

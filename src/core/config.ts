@@ -10,6 +10,8 @@ export const CONFIG = {
   edgeSinkFraction: 0.07,
   /** World-Y the terrain sinks to at the very edge of the map. */
   edgeSeaDepth: -0.35,
+  /** Width (world units) of the smooth blend around a graded building pad. */
+  gradeMargin: 1.6,
   /** Terrain chunking (in height-grid cells per chunk side). */
   chunkCells: 64,
   /** Camera. */

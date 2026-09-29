@@ -12,7 +12,8 @@ export type ReasonCode =
   | 'needs_coast'
   | 'overlap'
   | 'too_low'
-  | 'earthworks';
+  | 'earthworks'
+  | 'uneven_neighbors';
 
 export interface PlacementReason {
   code: ReasonCode;
@@ -32,8 +33,8 @@ export interface PlacementResult {
 export interface PlacementEnv {
   hf: HeightField;
   territory: Territory;
-  /** Existing buildings whose footprint comes within `margin` of `obb`. */
-  overlapping(obb: Obb, margin: number): Array<{ id: number; name: string }>;
+  /** Existing buildings whose footprint comes within `margin` of `obb`, with the level each was built at. */
+  overlapping(obb: Obb, margin: number): Array<{ id: number; name: string; padY: number }>;
 }
 
 /** Minimum clear gap between neighbouring footprints (world units). */
@@ -42,6 +43,8 @@ export const MIN_GAP = 0.12;
 export const COAST_PAD_MIN = 0.12;
 /** Largest cut or fill allowed under a footprint (world units). */
 export const MAX_EARTHWORKS = 1.5;
+/** Pads closer than this in height count as the same level. */
+export const LEVEL_TOLERANCE = 0.03;
 /** Footprint samples per side used by the rules. */
 const N = 5;
 
@@ -64,7 +67,7 @@ function sampleFootprint(hf: HeightField, o: Obb): Sample[] {
       const lx = (i / (N - 1) - 0.5) * 2 * o.hw;
       const lz = (j / (N - 1) - 0.5) * 2 * o.hd;
       const [x, z] = obbToWorld(o, lx, lz);
-      out.push({ x, z, lz, h: hf.sample(x, z) });
+      out.push({ x, z, lz, h: hf.sampleNatural(x, z) });
     }
   }
   return out;
@@ -111,19 +114,37 @@ export function validatePlacement(env: PlacementEnv, def: BuildingDef, x: number
     reasons.push({ code: 'water', message: "Can't build on water" });
   }
 
-  // Slope: steepest local ground under the footprint (land only, so a coastal drop-off is not "steep").
+  // Slope: steepest local ground under the footprint, judged on the *original* land so that a neighbour's
+  // graded pad (whose blend ramp is steep by construction) never makes it impossible to build beside it.
+  // Water does not count: a coastal drop-off is not "steep".
   let slopeDeg = 0;
   for (const s of samples) {
     if (s.h <= CONFIG.seaLevel) continue;
-    slopeDeg = Math.max(slopeDeg, hf.slopeDeg(s.x, s.z));
+    slopeDeg = Math.max(slopeDeg, hf.slopeDegNatural(s.x, s.z));
   }
   if (slopeDeg > rules.maxSlopeDeg) {
     reasons.push({ code: 'too_steep', message: `Too steep: ${slopeDeg.toFixed(0)}° (max ${rules.maxSlopeDeg}°)` });
   }
 
   // Pad height: mean ground level, but never below the waterline (coastal quays stand proud of the sea).
-  const mean = hf.meanHeight(x, z, obb.hw, obb.hd, rot, N);
-  const padY = Math.max(mean, rules.needsCoast ? COAST_PAD_MIN : 0.02);
+  const mean = hf.meanHeight(x, z, obb.hw, obb.hd, rot, N, true);
+  const floor = rules.needsCoast ? COAST_PAD_MIN : 0.02;
+  let padY = Math.max(mean, floor);
+
+  // Buildings close enough for their graded pads to interact share one level, so a settlement is terraced
+  // flat and neighbouring pads never fight over the ground between them.
+  const reach = 2 * (2 * hf.cell + CONFIG.gradeMargin);
+  const neighbours = env.overlapping(obb, reach);
+  if (neighbours.length > 0) {
+    const levels = neighbours.map((n) => n.padY);
+    const lo = Math.min(...levels);
+    const hi = Math.max(...levels);
+    if (hi - lo > LEVEL_TOLERANCE || (rules.needsCoast && lo < floor - LEVEL_TOLERANCE)) {
+      reasons.push({ code: 'uneven_neighbors', message: 'Neighbouring buildings are at different levels' });
+    } else {
+      padY = Math.max(lo, floor);
+    }
+  }
 
   if (rules.minElevationM !== undefined) {
     const metres = (padY / hf.exag) * 1000;

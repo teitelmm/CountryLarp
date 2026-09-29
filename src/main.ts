@@ -44,7 +44,7 @@ async function startCountry(iso: string) {
   try {
     const data = await loadCountry(iso);
     game?.dispose();
-    game = await Game.create(data, renderer, rig, input);
+    game = await Game.create(data, renderer, rig, input, { fresh: new URLSearchParams(location.search).has('fresh') });
     rig.attach(game.world.hf);
     rig.setPose({ focus: new THREE.Vector3(0, 0, 0), yaw: 0, pitch: THREE.MathUtils.degToRad(55), distance: game.world.extent * 0.85 });
     rig.setHome();

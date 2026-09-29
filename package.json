@@ -10,7 +10,12 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "bake": "node scripts/bake-country.mjs"
+    "bake": "node scripts/bake-country.mjs",
+    "e2e:camera": "node scripts/e2e-camera.mjs",
+    "e2e:placement": "node scripts/e2e-placement.mjs",
+    "e2e:construction": "node scripts/e2e-construction.mjs",
+    "e2e:features": "node scripts/e2e-features.mjs",
+    "smoke:prod": "node scripts/smoke-prod.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.21.0",

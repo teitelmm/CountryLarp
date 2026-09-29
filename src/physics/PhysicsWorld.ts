@@ -1,4 +1,4 @@
-import RAPIER from '@dimforge/rapier3d-compat';
+import type RAPIER from '@dimforge/rapier3d-compat';
 import * as THREE from 'three';
 import { hullPoints } from '../buildings/PieceFactory';
 import type { PieceSpec } from '../buildings/types';
@@ -6,12 +6,18 @@ import { FIXED_DT } from '../core/Clock';
 
 export type Rapier = typeof RAPIER;
 
-let ready: Promise<void> | null = null;
+let loading: Promise<Rapier> | null = null;
 
-/** Initialise the Rapier WASM module once (idempotent). */
-export async function loadRapier(): Promise<Rapier> {
-  await (ready ??= RAPIER.init());
-  return RAPIER;
+/**
+ * Load and initialise the Rapier WASM module once. It is imported dynamically so the physics engine
+ * (a couple of MB with its embedded WASM) is a separate chunk that the country picker never waits for.
+ */
+export function loadRapier(): Promise<Rapier> {
+  return (loading ??= import('@dimforge/rapier3d-compat').then(async (m) => {
+    const R = m.default;
+    await R.init();
+    return R;
+  }));
 }
 
 /** World-units per second squared. Chosen so a piece dropped a couple of units lands in about half a second. */

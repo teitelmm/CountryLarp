@@ -174,3 +174,48 @@ html, body {
 .clock-btn:hover { color: var(--text); background: rgba(255, 255, 255, 0.1); }
 .clock-btn.active { color: #101826; background: var(--accent); border-color: var(--accent); }
 .clock-time { min-width: 44px; margin-left: 8px; text-align: center; color: var(--muted); font-variant-numeric: tabular-nums; font-weight: 600; }
+
+/* ---- top bar extras ----------------------------------------------------------------------- */
+.tb-right { justify-self: end; display: flex; align-items: center; gap: 10px; }
+.tb-right .tb-funds { justify-self: auto; }
+.tb-new {
+  padding: 5px 11px; border-radius: 8px; border: 1px solid var(--line); background: transparent; color: var(--muted);
+  font: 600 12px system-ui; cursor: pointer;
+}
+.tb-new:hover { color: var(--text); background: rgba(255, 255, 255, 0.07); }
+
+/* ---- inspect panel ------------------------------------------------------------------------ */
+.inspect {
+  position: fixed; top: 58px; right: 12px; z-index: 20; width: 290px; padding: 14px; border-radius: 14px;
+  background: var(--panel); backdrop-filter: blur(8px); border: 1px solid var(--line); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+.in-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.in-title { font-size: 17px; font-weight: 750; }
+.in-cat { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.in-status { margin-top: 6px; font-weight: 650; color: var(--accent); font-variant-numeric: tabular-nums; }
+.inspect.done .in-status { color: var(--good); }
+.in-bar { height: 6px; margin: 6px 0 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+.in-bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), #ffd166); transition: width 0.2s linear; }
+.inspect.done .in-bar i { background: var(--good); }
+.in-desc { color: var(--muted); font-size: 13px; line-height: 1.4; }
+.in-chips { display: flex; flex-wrap: wrap; gap: 5px; margin: 10px 0 6px; }
+.in-meta { font-size: 12px; color: var(--muted); }
+.in-ports { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--muted); }
+.in-ports-head { width: 100%; text-transform: uppercase; letter-spacing: 0.07em; font-size: 10px; margin-bottom: 2px; }
+.in-port { display: inline-flex; align-items: center; gap: 5px; color: var(--text); }
+.in-port i, .pl-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.in-demolish {
+  width: 100%; margin-top: 14px; padding: 8px; border-radius: 9px; cursor: pointer; font: 650 13px system-ui;
+  color: #ffb0a4; background: rgba(229, 96, 77, 0.1); border: 1px solid rgba(229, 96, 77, 0.4);
+}
+.in-demolish:hover { background: rgba(229, 96, 77, 0.2); }
+.in-demolish.armed { color: #fff; background: rgba(229, 96, 77, 0.7); border-color: #e5604d; }
+
+/* ---- ports legend ------------------------------------------------------------------------- */
+.ports-legend {
+  position: fixed; left: 12px; bottom: 210px; z-index: 20; padding: 8px 12px; border-radius: 10px; display: flex; flex-direction: column; gap: 3px;
+  background: var(--panel); border: 1px solid var(--line); font-size: 12px; pointer-events: none;
+}
+.pl-title { text-transform: uppercase; letter-spacing: 0.07em; font-size: 10px; color: var(--muted); margin-bottom: 2px; }
+.ports-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.ports-legend i { width: 9px; height: 9px; border-radius: 2px; transform: rotate(45deg); display: inline-block; }

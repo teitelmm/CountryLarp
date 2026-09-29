@@ -277,3 +277,82 @@ describe('every building in the catalog can be constructed', () => {
     expect(arrived / def.pieces.length, `${id}: ${arrived} arrived, ${forced} forced`).toBeGreaterThanOrEqual(0.8);
   }, 120000);
 });
+
+describe('demolition', () => {
+  /** The debris group Demolition adds to the scene (a Group of piece meshes that is not the buildings root). */
+  const debrisGroup = (scene: THREE.Group, mgr: BuildingManager) => scene.children.find((c) => c !== mgr.root && c.type === 'Group') as THREE.Group | undefined;
+  const meanRadius = (g: THREE.Group, cx: number, cz: number) => g.children.reduce((s, m) => s + Math.hypot(m.position.x - cx, m.position.z - cz), 0) / g.children.length;
+
+  it('breaks the building into rigid bodies, throws them outward, and cleans everything up', () => {
+    const { mgr, scene, physics, place, step, run } = setup();
+    const def = getDef('barracks');
+    const b = mgr.place(def, 4, 0, 0, 1.4, { instant: true });
+    expect(mgr.demolish(b.id)).toBe(true);
+    expect(b.state).toBe('demolishing');
+    expect(mgr.all).toHaveLength(0); // the footprint is free immediately
+    expect(mgr.activeDemolitions).toBe(1);
+    expect(physics.dynamicCount).toBe(def.pieces.length);
+    const group = debrisGroup(scene, mgr)!;
+    expect(group.children).toHaveLength(def.pieces.length);
+    step();
+    const r0 = meanRadius(group, 4, 0);
+    run(1.0);
+    expect(meanRadius(group, 4, 0)).toBeGreaterThan(r0 + 0.3); // debris has spread out
+    // Nothing explodes: all transforms stay finite and near the site.
+    for (const m of group.children) {
+      expect(Number.isFinite(m.position.x + m.position.y + m.position.z)).toBe(true);
+      expect(Math.hypot(m.position.x - 4, m.position.z)).toBeLessThan(30);
+    }
+    run(6);
+    expect(mgr.activeDemolitions).toBe(0);
+    expect(physics.dynamicCount).toBe(0);
+    expect(debrisGroup(scene, mgr)).toBeUndefined();
+    expect(scene.children).toHaveLength(2);
+    void place;
+  });
+
+  it('frees the spot so a new building can go there straight away', () => {
+    const { mgr } = setup();
+    const def = getDef('barracks');
+    const b = mgr.place(def, 4, 0, 0, 1.4, { instant: true });
+    expect(mgr.overlapping({ cx: 4, cz: 0, hw: 1, hd: 1, rot: 0 }, 0)).toHaveLength(1);
+    mgr.demolish(b.id);
+    expect(mgr.overlapping({ cx: 4, cz: 0, hw: 1, hd: 1, rot: 0 }, 0)).toHaveLength(0);
+    expect(mgr.demolish(b.id)).toBe(false); // already gone
+  });
+
+  it('a distant demolition uses no bodies and finishes quickly', () => {
+    const { mgr, physics, run } = setup(FAR);
+    const b = mgr.place(getDef('barracks'), 4, 0, 0, 1.4, { instant: true });
+    mgr.demolish(b.id);
+    expect(physics.dynamicCount).toBe(0);
+    run(1);
+    expect(mgr.activeDemolitions).toBe(0);
+  });
+
+  it('demolishing a building that is still being built abandons the site', () => {
+    const { mgr, physics, place, run } = setup();
+    const b = place('hospital', 4, 0);
+    run(SIZING_TIME + 5);
+    mgr.demolish(b.id);
+    expect(mgr.activeSites).toBe(0);
+    expect(mgr.all).toHaveLength(0);
+    expect(physics.dynamicCount).toBe(0);
+  });
+
+  it('reports additions, removals and completions to listeners and bumps the version', () => {
+    const { mgr, place, runUntilDone } = setup();
+    const v0 = mgr.version;
+    let completed = 0;
+    let changes = 0;
+    mgr.onComplete(() => completed++);
+    mgr.onChange(() => changes++);
+    place('field_hospital', 4, 0);
+    expect(mgr.version).toBe(v0 + 1);
+    runUntilDone(60);
+    expect(completed).toBe(1);
+    mgr.demolish(mgr.all[0].id);
+    expect(changes).toBe(2);
+    expect(mgr.version).toBe(v0 + 2);
+  });
+});

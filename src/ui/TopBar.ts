@@ -8,7 +8,7 @@ export class TopBar {
   private readonly center: HTMLElement;
   private unsub: () => void;
 
-  constructor(meta: CountryMeta, treasury: Treasury) {
+  constructor(meta: CountryMeta, treasury: Treasury, onNewGame?: () => void) {
     this.el.className = 'topbar';
     const [top, bottom] = meta.colors.flag ?? [meta.colors.primary, meta.colors.secondary];
     this.el.innerHTML = `
@@ -17,9 +17,13 @@ export class TopBar {
         <span class="tb-name"></span>
       </div>
       <div class="tb-center"></div>
-      <div class="tb-funds" title="Treasury"><span class="coin">◆</span><span class="tb-funds-value"></span></div>`;
+      <div class="tb-right">
+        <button class="tb-new" title="Abandon this game and choose again">New game</button>
+        <div class="tb-funds" title="Treasury"><span class="coin">◆</span><span class="tb-funds-value"></span></div>
+      </div>`;
     (this.el.querySelector('.tb-name') as HTMLElement).textContent = meta.name;
     this.funds = this.el.querySelector('.tb-funds-value')!;
+    (this.el.querySelector('.tb-new') as HTMLButtonElement).addEventListener('click', () => onNewGame?.());
     this.center = this.el.querySelector('.tb-center')!;
     const render = (v: number) => (this.funds.textContent = Math.floor(v).toLocaleString('en-US'));
     render(treasury.funds);

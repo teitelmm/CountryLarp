@@ -60,6 +60,8 @@ export class HeightField {
   readonly exag: number;
   /** Terrain height in world units (sea level = 0). */
   readonly h: Float32Array;
+  /** The terrain as baked, before any building levelled it (validation judges the land, not earlier earthworks). */
+  private h0: Float32Array = new Float32Array(0);
   /** 0..1 weight of "graded pad" per node (used for shading). */
   readonly pad: Float32Array;
   /** 1 where inside the country's border. */
@@ -93,6 +95,7 @@ export class HeightField {
         if (y > this.maxY) this.maxY = y;
       }
     }
+    this.h0 = this.h.slice();
   }
 
   // --- coordinates -------------------------------------------------------------------------
@@ -114,10 +117,10 @@ export class HeightField {
     return Math.abs(x) <= this.halfX && Math.abs(z) <= this.halfZ;
   }
 
-  private node(i: number, j: number) {
+  private node(i: number, j: number, src: Float32Array = this.h) {
     const ci = i < 0 ? 0 : i >= this.cols ? this.cols - 1 : i;
     const cj = j < 0 ? 0 : j >= this.rows ? this.rows - 1 : j;
-    return this.h[cj * this.cols + ci];
+    return src[cj * this.cols + ci];
   }
 
   // --- sampling ----------------------------------------------------------------------------
@@ -139,6 +142,15 @@ export class HeightField {
 
   /** Smooth (bicubic Catmull-Rom) height: the same surface the vertex shader draws up close. */
   sample(x: number, z: number): number {
+    return this.bicubic(this.h, x, z);
+  }
+
+  /** As `sample`, but of the original terrain, ignoring any levelling done by buildings. */
+  sampleNatural(x: number, z: number): number {
+    return this.bicubic(this.h0, x, z);
+  }
+
+  private bicubic(src: Float32Array, x: number, z: number): number {
     const gx = this.gridX(x);
     const gz = this.gridZ(z);
     const i = Math.floor(gx);
@@ -146,7 +158,7 @@ export class HeightField {
     const tx = gx - i;
     const tz = gz - j;
     const row = (jj: number) =>
-      catmullRom(this.node(i - 1, jj), this.node(i, jj), this.node(i + 1, jj), this.node(i + 2, jj), tx);
+      catmullRom(this.node(i - 1, jj, src), this.node(i, jj, src), this.node(i + 1, jj, src), this.node(i + 2, jj, src), tx);
     return catmullRom(row(j - 1), row(j), row(j + 1), row(j + 2), tz);
   }
 
@@ -179,6 +191,14 @@ export class HeightField {
   slopeDeg(x: number, z: number): number {
     const n = this.normal(x, z, _tmp);
     return (Math.acos(Math.min(1, Math.max(-1, n.y))) * 180) / Math.PI;
+  }
+
+  /** Slope of the original terrain (what a building site is judged on, whatever was built nearby). */
+  slopeDegNatural(x: number, z: number): number {
+    const e = this.cell * 0.5;
+    const dx = (this.sampleNatural(x + e, z) - this.sampleNatural(x - e, z)) / (2 * e);
+    const dz = (this.sampleNatural(x, z + e) - this.sampleNatural(x, z - e)) / (2 * e);
+    return (Math.atan(Math.hypot(dx, dz)) * 180) / Math.PI;
   }
 
   /** Normal at a lattice node (used to build the GPU normal channel). Returns [nx, nz]. */
@@ -312,14 +332,14 @@ export class HeightField {
   }
 
   /** Mean of the smooth surface over a footprint (used as the pad's target height). */
-  meanHeight(cx: number, cz: number, halfW: number, halfD: number, rot: number, samples = 5): number {
+  meanHeight(cx: number, cz: number, halfW: number, halfD: number, rot: number, samples = 5, natural = false): number {
     let sum = 0;
     for (let a = 0; a < samples; a++) {
       for (let b = 0; b < samples; b++) {
         const lx = ((a + 0.5) / samples - 0.5) * 2 * halfW;
         const lz = ((b + 0.5) / samples - 0.5) * 2 * halfD;
         const [dx, dz] = rotateOffset(lx, lz, rot);
-        sum += this.sample(cx + dx, cz + dz);
+        sum += natural ? this.sampleNatural(cx + dx, cz + dz) : this.sample(cx + dx, cz + dz);
       }
     }
     return sum / (samples * samples);

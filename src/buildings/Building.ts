@@ -3,7 +3,7 @@ import type { Obb } from '../core/obb';
 import type { ConstructionSite } from './ConstructionSite';
 import type { BuildingDef } from './types';
 
-export type BuildingState = 'sizing' | 'constructing' | 'finishing' | 'complete';
+export type BuildingState = 'sizing' | 'constructing' | 'finishing' | 'complete' | 'demolishing';
 
 /** A placed building. While under construction its `site` drives the animation and physics. */
 export class Building {

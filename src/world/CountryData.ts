@@ -95,8 +95,15 @@ export async function loadCountry(iso: string): Promise<CountryData> {
       return r.blob();
     }),
   ]);
-  // Colour management and alpha premultiplication must be off or the packed values get altered.
-  const bitmap = await createImageBitmap(blob, { colorSpaceConversion: 'none', premultiplyAlpha: 'none' });
+  // Colour management and alpha premultiplication must be off or the packed values get altered. Some
+  // browsers reject these options; the image is fully opaque and carries no colour profile, so plain
+  // decoding yields the same bytes there.
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(blob, { colorSpaceConversion: 'none', premultiplyAlpha: 'none' });
+  } catch {
+    bitmap = await createImageBitmap(blob);
+  }
   const canvas = document.createElement('canvas');
   canvas.width = bitmap.width;
   canvas.height = bitmap.height;

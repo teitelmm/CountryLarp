@@ -53,6 +53,7 @@ export class Placement {
   });
   private readonly outlineMaterial = new THREE.LineBasicMaterial({ color: VALID });
   private last: (PlacementResult & { affordable: boolean }) | null = null;
+  private consumed = false;
   private listeners = new Set<(def: BuildingDef | null) => void>();
   private placedListeners = new Set<(b: Building) => void>();
   private readonly disposers: Array<() => void> = [];
@@ -61,6 +62,9 @@ export class Placement {
     this.disposers.push(
       d.input.onClick((e) => {
         if (!this.def) return;
+        // Other click handlers (selection) run after this one in the same event: tell them it is spoken for.
+        this.consumed = true;
+        setTimeout(() => (this.consumed = false), 0);
         if (e.button === 0) this.placeAtCursor(e.shift);
         else if (e.button === 2) this.cancel();
       }),
@@ -74,6 +78,11 @@ export class Placement {
 
   get active(): BuildingDef | null {
     return this.def;
+  }
+
+  /** True while the current click was handled by placement (so selection must ignore it). */
+  get clickConsumed() {
+    return this.consumed;
   }
 
   get lastResult() {

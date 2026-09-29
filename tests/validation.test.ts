@@ -11,13 +11,17 @@ import { makeMap } from './helpers';
  * Synthetic map (see helpers.ts): a ramp rising 0.1 per unit towards +x, sea at x <= -10,
  * exaggeration 1. The country polygon spans x in [-13, 15], z in [-15, 15].
  */
-function makeEnv(existing: Array<{ id: number; name: string; obb: Obb }> = []): PlacementEnv {
+function makeEnv(existing: Array<{ id: number; name: string; obb: Obb; padY?: number }> = []): PlacementEnv {
   const hf = makeMap();
   const territory = new Territory([[[[-13, -15], [15, -15], [15, 15], [-13, 15]]]]);
   return {
     hf,
     territory,
-    overlapping: (obb, margin) => existing.filter((e) => obbOverlap(obb, e.obb, margin)).map(({ id, name }) => ({ id, name })),
+    // A mocked neighbour was "built" at the ground height under it unless the test says otherwise.
+    overlapping: (obb, margin) =>
+      existing
+        .filter((e) => obbOverlap(obb, e.obb, margin))
+        .map((e) => ({ id: e.id, name: e.name, padY: e.padY ?? hf.meanHeight(e.obb.cx, e.obb.cz, e.obb.hw, e.obb.hd, e.obb.rot) })),
   };
 }
 const codes = (r: { reasons: Array<{ code: string }> }) => r.reasons.map((x) => x.code);
