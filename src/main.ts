@@ -55,7 +55,15 @@ async function startCountry(iso: string) {
 }
 
 async function boot() {
-  const requested = new URLSearchParams(location.search).get('country');
+  const params = new URLSearchParams(location.search);
+  if (params.has('sheet')) {
+    // Dev-only contact sheet of every building.
+    const { showSheet } = await import('./dev/sheet');
+    const only = params.get('sheet')?.split(',').filter(Boolean);
+    showSheet({ primary: '#dc143c', secondary: '#f2f2f2' }, only?.length ? only : undefined);
+    return;
+  }
+  const requested = params.get('country');
   if (requested) return startCountry(requested.toUpperCase());
   const countries = await loadCountryIndex();
   const close = showCountryPicker(countries, (iso) => {
